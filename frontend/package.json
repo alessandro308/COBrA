@@ -9,7 +9,7 @@
     "react-rating": "^1.1.2",
     "react-scripts": "1.1.4",
     "react-web3": "^0.4.5",
-    "web3": "0.19.0"
+    "web3": "0.20.6"
   },
   "scripts": {
     "start": "react-scripts start",

@@ -1,27 +1,14 @@
 pragma solidity ^0.4.23;
 
-contract BaseContentManagement{
-    enum Genre {SONG, BOOK, VIDEO, MOVIE, OTHER}
-    address public owner;
-    string public author;
-    bytes32 public name;
-    uint64 public views = 0;
-    uint64 public viewsFromLastPayment = 0;
-    Genre public genre;
-    mapping(address => bool) public hasConsumed;
-    mapping(address => bool) public hasAccess;
-    function resetViewsAndGetMoney() external payable;
-    function setCatalogAddress(address _catalog) external returns (bool);
-    function grantAccess(address _user) external;
-}
+import "./BaseContentManagement.sol";
 
 contract Catalog{
     struct Content {
         bytes32 name;
         uint64 views;
     }
-    uint public contentCost = 0.0002 ether;
-    uint public premiumCost = 0.02 ether;
+    uint public contentCost = 0.002 ether;
+    uint public premiumCost = 0.2 ether;
     uint public premiumTime = 10000 /*Block height*/;
     address private owner;
  
@@ -30,10 +17,10 @@ contract Catalog{
     bytes32[] internal contentsName;
     mapping(bytes32 => address) public name2address;
     mapping (address => uint) internal premiumEndBlockNumber;
-    mapping (string => Content) internal author2mostPopular;
+    //mapping (string => Content) internal author2mostPopular;
 
-    mapping(uint => bytes32) internal genre2mostPopular;
-    mapping(uint => uint64) internal genre2mostPopularCounter;
+    //mapping(uint => bytes32) internal genre2mostPopular;
+    //mapping(uint => uint64) internal genre2mostPopularCounter;
     
     event ContentConsumed(bytes32 _content, address _user);
     event ContentBought(bytes32 _content, address _user);
@@ -41,6 +28,7 @@ contract Catalog{
     event GiftPremiumSubscription(address _from, address _to);
     event PublishedContent(address _content, bytes32 _contentName);
     event PremiumSubscriptionBought(address _user);
+    event PaymentTriggered();
 
     constructor () public {
         owner = msg.sender;
@@ -56,6 +44,7 @@ contract Catalog{
         return premiumEndBlockNumber[_user] > block.number;
     }
 
+    /* simple wrapper for content */
     function isGranted(address _user, address _content) view external returns (bool) {
         BaseContentManagement cont = BaseContentManagement(_content);
         return cont.hasAccess(_user);
@@ -102,7 +91,16 @@ contract Catalog{
     }
 
     function getMostPopularByGenre(uint _g) external view returns (bytes32){
-        return genre2mostPopular[_g];
+        //return genre2mostPopular[_g];
+        bytes32 name;
+        uint count = 0;
+        for(uint i = 0; i<contentsName.length; i++){
+            BaseContentManagement c = BaseContentManagement(name2address[contentsName[i]]);
+            if( uint(c.genre()) == _g && count < c.views() ){
+                name = c.name();
+            }
+        }
+        return name;
     }
 
     function getLatestByAuthor(string author) external view returns (bytes32){
@@ -117,29 +115,39 @@ contract Catalog{
     }
 
     function getMostPopularByAuthor(string author) external view returns (bytes32){
-        return author2mostPopular[author].name;
-    }
+        //return author2mostPopular[author].name;
+        bytes32 name;
+        uint count = 0;
+        for(uint i = 0; i<contentsName.length; i++){
+            BaseContentManagement c = BaseContentManagement(name2address[contentsName[i]]);
+            if( keccak256(abi.encodePacked(author)) == keccak256(abi.encodePacked(c.author())) && c.views() > count ){
+                name = c.name();
+            }
+        }
+        return name;
+    }   
 
-    function consumeContent(bytes32 _contentName, uint64 _newViewsCounter) external {
+    function consumeContent(bytes32 _contentName/*, uint64 _newViewsCounter*/) external {
         require(msg.sender == name2address[_contentName], "This function is callable only from the content");
-        BaseContentManagement c = BaseContentManagement(name2address[_contentName]);
+        /*BaseContentManagement c = BaseContentManagement(name2address[_contentName]);
         BaseContentManagement.Genre g = c.genre();
         if(genre2mostPopularCounter[uint(g)] < _newViewsCounter){
             genre2mostPopular[uint(g)] = _contentName;
             genre2mostPopularCounter[uint(g)] = _newViewsCounter;
-        }
-        string memory a = c.author();
+        }*/
+        /*string memory a = c.author();
         if(_newViewsCounter > author2mostPopular[a].views){
             author2mostPopular[a] = Content(_contentName, _newViewsCounter);
-        }
+        }*/
         totalViews++;
-        if(totalViews%2 == 0){
+        if(totalViews%1000 == 0){
             for(uint i = 0; i<contentsName.length; i++){
                 BaseContentManagement content = BaseContentManagement(name2address[contentsName[i]]);
-                content.resetViewsAndGetMoney.value(address(this).balance/totalViews * uint(content.views()))();
+                content.resetViewsAndGetMoney.value(contentCost * uint(content.viewsFromLastPayment()))();
             }
         }
         emit ContentConsumed(_contentName, tx.origin);
+        emit PaymentTriggered();
     }
 
     function publishContent(address _addr) external{
@@ -192,7 +200,13 @@ contract Catalog{
     }
 
     function goodbye() external onlyOwner(){
+        /* pay the content not already paid */
         for(uint i = 0; i<contentsName.length; i++){
+            BaseContentManagement content = BaseContentManagement(name2address[contentsName[i]]);
+            content.resetViewsAndGetMoney.value(contentCost * uint(content.viewsFromLastPayment()))();
+        }
+        /* Divide the subscription premium cost amoung all the contents w.r.t. their total views */
+        for(i = 0; i<contentsName.length; i++){
             BaseContentManagement content = BaseContentManagement(name2address[contentsName[i]]);
             address(name2address[contentsName[i]]).transfer(address(this).balance/totalViews * uint(content.views()));
         }

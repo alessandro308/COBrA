@@ -1,18 +1,21 @@
 pragma solidity ^0.4.23;
 
 contract BaseContentManagement{
-    enum Genre {SONG, BOOK, VIDEO, MOVIE, OTHER}
-    address public owner;
+    enum Genre {SONG, BOOK, VIDEO}
+    struct Rating{
+        uint8 fairness;
+        uint8 coolness;
+        uint8 appreciation;
+    }
     string public author;
     bytes32 public name;
-    uint64 public views = 0;
-    uint64 public viewsFromLastPayment = 0;
+    uint64 public views;
+    uint64 public viewsFromLastPayment;
     Genre public genre;
-    mapping(address => bool) public hasConsumed;
-    mapping(address => bool) public hasAccess;
+    uint public contentCost;
+    Rating public ratingMean;
     function resetViewsAndGetMoney() external payable;
     function setCatalogAddress(address _catalog) external returns (bool);
-    function grantAccess(address _user) external;
 }
 
 contract Catalog{
@@ -20,27 +23,31 @@ contract Catalog{
         bytes32 name;
         uint64 views;
     }
-    uint public contentCost = 0.0002 ether;
     uint public premiumCost = 0.02 ether;
     uint public premiumTime = 10000 /*Block height*/;
     address private owner;
+    
+    bytes32 mostViewedBOOK = 0x0;
+    uint64 mostViewedBOOKviewCounter = 0;
+    bytes32 mostViewedSONG = 0x0;
+    uint64 mostViewedSONGviewCounter = 0;
+    bytes32 mostViewedVIDEO = 0x0;
+    uint64 mostViewedVIDEOviewCounter = 0;
  
     uint64 totalViews = 0;
 
     bytes32[] internal contentsName;
     mapping(bytes32 => address) public name2address;
+    /* using address instead of bytes32 due the bytes occupied */
+    mapping (address /*USER*/ => mapping(address /*CONTENT*/ => bool)) internal grantedAccess; /* inner map in order to decrease gas */
     mapping (address => uint) internal premiumEndBlockNumber;
     mapping (string => Content) internal author2mostPopular;
-
-    mapping(uint => bytes32) internal genre2mostPopular;
-    mapping(uint => uint64) internal genre2mostPopularCounter;
+    mapping (bytes32 => uint) public contentCost;
     
     event ContentConsumed(bytes32 _content, address _user);
-    event ContentBought(bytes32 _content, address _user);
     event GiftContentBought(address _from, address _to, bytes32 _content);
     event GiftPremiumSubscription(address _from, address _to);
-    event PublishedContent(address _content, bytes32 _contentName);
-    event PremiumSubscriptionBought(address _user);
+    event ContentBought(bytes32 _content, address _user);
 
     constructor () public {
         owner = msg.sender;
@@ -57,9 +64,9 @@ contract Catalog{
     }
 
     function isGranted(address _user, address _content) view external returns (bool) {
-        BaseContentManagement cont = BaseContentManagement(_content);
-        return cont.hasAccess(_user);
+        return (grantedAccess[_user][_content]);
     }
+
 
     function getStatistics() external view returns (bytes32[], uint[]){ 
         uint[] memory views = new uint[](contentsName.length);
@@ -102,7 +109,15 @@ contract Catalog{
     }
 
     function getMostPopularByGenre(uint _g) external view returns (bytes32){
-        return genre2mostPopular[_g];
+        if(BaseContentManagement.Genre(_g) == BaseContentManagement.Genre.BOOK){
+            return mostViewedBOOK;
+        }
+        if(BaseContentManagement.Genre(_g) == BaseContentManagement.Genre.SONG){
+            return mostViewedSONG;
+        }
+        if(BaseContentManagement.Genre(_g) == BaseContentManagement.Genre.VIDEO){
+            return mostViewedVIDEO;
+        }
     }
 
     function getLatestByAuthor(string author) external view returns (bytes32){
@@ -123,17 +138,29 @@ contract Catalog{
     function consumeContent(bytes32 _contentName, uint64 _newViewsCounter) external {
         require(msg.sender == name2address[_contentName], "This function is callable only from the content");
         BaseContentManagement c = BaseContentManagement(name2address[_contentName]);
+        grantedAccess[tx.origin][name2address[_contentName]] = false;
         BaseContentManagement.Genre g = c.genre();
-        if(genre2mostPopularCounter[uint(g)] < _newViewsCounter){
-            genre2mostPopular[uint(g)] = _contentName;
-            genre2mostPopularCounter[uint(g)] = _newViewsCounter;
+        if( g == BaseContentManagement.Genre.BOOK && 
+            _newViewsCounter > mostViewedBOOKviewCounter ){
+            mostViewedBOOK = _contentName;
+            mostViewedBOOKviewCounter = _newViewsCounter;
+        } else 
+        if( g == BaseContentManagement.Genre.VIDEO && 
+            _newViewsCounter > mostViewedVIDEOviewCounter ){
+            mostViewedVIDEO = _contentName;
+            mostViewedVIDEOviewCounter = _newViewsCounter;
+        } else
+        if( g == BaseContentManagement.Genre.SONG && 
+            _newViewsCounter > mostViewedSONGviewCounter ){
+            mostViewedSONG = _contentName;
+            mostViewedSONGviewCounter = _newViewsCounter;
         }
         string memory a = c.author();
         if(_newViewsCounter > author2mostPopular[a].views){
             author2mostPopular[a] = Content(_contentName, _newViewsCounter);
         }
         totalViews++;
-        if(totalViews%2 == 0){
+        if(totalViews%1000 == 0){
             for(uint i = 0; i<contentsName.length; i++){
                 BaseContentManagement content = BaseContentManagement(name2address[contentsName[i]]);
                 content.resetViewsAndGetMoney.value(address(this).balance/totalViews * uint(content.views()))();
@@ -149,21 +176,19 @@ contract Catalog{
         assert(c.viewsFromLastPayment() == 0);
         contentsName.push(c.name());
         name2address[c.name()] = _addr;   
-        emit PublishedContent(_addr, c.name());
+        contentCost[c.name()] = c.contentCost();
     }
 
     /* Set, for the sender, the right to access to the content */
     function grantAccess(bytes32 _content) external payable {
-        require(msg.value == contentCost, "You have to pay some ether for this content");
-        BaseContentManagement b = BaseContentManagement(name2address[_content]);
-        b.grantAccess(msg.sender);
+        require(msg.value == contentCost[_content], "You have to pay some ether for this content");
+        grantedAccess[msg.sender][name2address[_content]] = true;
         emit ContentBought(_content, msg.sender);
     }
 
     function giftContent(bytes32 _contentName, address _userAddr) external payable {
-        require(msg.value == contentCost);
-        BaseContentManagement b = BaseContentManagement(name2address[_contentName]);
-        b.grantAccess(_userAddr);
+        require(msg.value == contentCost[_contentName]);
+        grantedAccess[_userAddr][name2address[_contentName]] = true;
         emit GiftContentBought(msg.sender, _userAddr, _contentName);
     }
     
@@ -188,7 +213,6 @@ contract Catalog{
         } else {
             premiumEndBlockNumber[msg.sender] = block.number + premiumTime;
         }
-        emit PremiumSubscriptionBought(msg.sender);
     }
 
     function goodbye() external onlyOwner(){
@@ -216,7 +240,7 @@ contract Catalog{
         return string(bytesStringTrimmed);
     }
 
-/*    function GetMostRated(uint _category) external view returns (bytes32){
+    function GetMostRated(uint _category) external view returns (bytes32){
         BaseContentManagement cont0 = BaseContentManagement(name2address[contentsName[0]]);
         bytes32 top = contentsName[0];
         BaseContentManagement.Rating memory toprate;
@@ -316,5 +340,5 @@ contract Catalog{
             }
         }
     }
-*/
+
 }

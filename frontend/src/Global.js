@@ -1,7 +1,7 @@
 import React from 'react';
 
 const Catalog = {
-    address: "0x2e756e704de3b709045af59ee863aa39d5559ca7",
+    address: "0xf12b5dd4ead5f743c6baa640b0216200e89b60da",
     abi: [
         {
             "constant": true,

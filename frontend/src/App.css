@@ -26,3 +26,29 @@
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+.withline {
+  overflow: hidden;
+  text-align: center;
+}
+
+.withline:before,
+.withline:after {
+  background-color: #000;
+  content: "";
+  display: inline-block;
+  height: 1px;
+  position: relative;
+  vertical-align: middle;
+  width: 50%;
+}
+
+.withline:before {
+  right: 0.5em;
+  margin-left: -50%;
+}
+
+.withline:after {
+  left: 0.5em;
+  margin-right: -50%;
+}

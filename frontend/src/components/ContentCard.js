@@ -19,11 +19,14 @@ export class ContentCard extends React.Component{
 
         this.catalog = (this.web3.eth.contract(this.props.catalog.abi)).at(this.props.catalog.address);
         this.content = this.web3.eth.contract(Content.abi).at(this.props.address);
-        const newFeedbackEvent = this.content.newFeedback({_user: this.web3.eth.defaultAccount});
+        const newFeedbackEvent = this.content.newFeedback({_user: this.web3.eth.defaultAccount}, {fromBlock: "latest"});
         newFeedbackEvent.watch(
             async (err, res)=>{
-                alert("Your feedback is saved!");
-                this.props.updateRates(this.props.name);
+                if(!err){
+                    console.log(res);
+                    console.log("Your feedback is saved!");
+                    this.props.updateRates(this.props.name);
+                }
             }
         )
     }

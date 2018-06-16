@@ -65,7 +65,6 @@ class App extends Component {
             }
             Promise.all(promises).then(
               values => {
-                console.log(values.length);
                 this.getValues(values, 0);
               }
             )
@@ -300,7 +299,6 @@ class App extends Component {
   updateRates = (contentName) => {
     let contents = this.state.contents;
     for(let i = 0; i<this.state.contents.length; i++){
-      console.log(i, contents[i].name, contentName);
       if(contents[i].name === contentName){
         contents[i].canRate = false;
         this.setState({contents});
@@ -356,40 +354,54 @@ class App extends Component {
   handleCloseModal = () => {
     this.setState({ giftContentModalShow: false });
   }
+
+  deployContent = (name, author, genre, cost) => {
+    return new Promise((succ, rej) => {
+      this.web3.eth.contract(Content.abi).new(name, author, genre, cost, {gas: 400000}, (err, res) => {if(!err)succ(res); else rej(err);});
+    })
+  }
+  deployAndPublish = async (name, author, genre, cost) => {
+    let contRes = await this.deployContent(name, author, genre, cost);
+    console.log(contRes);
+    console.log(contRes.address);
+    this.publishContent(contRes.address).then(
+      res =>
+        console.log(res)
+    )
+  }
   
   render() {
-    let content;
+    let contentProp = this.state.contents;
+    let showJumbutron = false;
     switch(this.state.menu){
-      case 0:   // All content
-        content = <ContentsGrid contents={this.state.contents} updateHandler={this.updateCatalogData} 
-                    triggerModal={this.triggerModal} isPremium={this.state.isPremium}/>;
-        break;
       case 1: // Only content with access right
-        let contentList = this.state.contents.filter(
+        contentProp = this.state.contents.filter(
           content => content.accessRight
         );
-        if(contentList.length === 0){
-          content = (<Jumbotron>
-            <h1>Buy some access rights to view your accessible content!</h1>
-            </Jumbotron>);
-        }else{
-          content = <ContentsGrid updateHandler={this.updateCatalogData} contents={contentList}
-                      triggerModal={this.triggerModal} isPremium={this.state.isPremium}/>;
+        if(contentProp.length === 0){
+          showJumbutron = true;
         }
         break;
       case 2: // Only content deployed by the user
-        content = <ContentsGrid updateHandler={this.updateCatalogData} isPremium={this.state.isPremium} contents={this.state.contents.filter(content => {
+        contentProp= this.state.contents.filter(content => {
           return content.owner === this.web3.eth.defaultAccount;
-        })} triggerModal={this.triggerModal}/>;
+        });
         break;
       case 3: //rateble content
-      content = <ContentsGrid updateHandler={this.updateCatalogData} isPremium={this.state.isPremium} contents={this.state.contents.filter(content => {
-        return content.canRate;
-      })} triggerModal={this.triggerModal}/>;
-      break;
+        contentProp = this.state.contents.filter(content => {
+          return content.canRate;
+        });
+        break;
       default:
-        content = <ContentsGrid contents={this.state.contents} />;
+        break;
     }
+    let content = showJumbutron ? 
+                    <Jumbotron>
+                      <h1>Buy some access rights to view your accessible content!</h1>
+                    </Jumbotron> :
+                    <ContentsGrid contents={contentProp} updateHandler={this.updateCatalogData} 
+                    triggerModal={this.triggerModal} isPremium={this.state.isPremium} updateRates={this.updateRates}/>;
+
     let cost = this.web3.fromWei(this.state.premiumCost, "ether").toNumber ?  // this if will be false only before first setState
                   this.web3.fromWei(this.state.premiumCost, "ether").toNumber() : 0;
     
@@ -403,7 +415,7 @@ class App extends Component {
               buyPremium={this.buyPremium} 
               isPremium={this.state.isPremium}/>
             <div className="container">
-              { this.state.menu === 2 ? <AddNewContent publishContent={this.publishContent}/> : null }
+              { this.state.menu === 2 ? <AddNewContent publishContent={this.publishContent} deployAndPublish={this.deployAndPublish}/> : null }
               {content}
             </div>
         </div>

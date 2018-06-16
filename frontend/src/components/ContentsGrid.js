@@ -25,7 +25,8 @@ class ContentsGrid extends React.Component{
                         owner={content.owner}
                         updateHandler={this.props.updateHandler}
                         triggerModal={this.props.triggerModal}
-                        isPremium={this.props.isPremium}/>
+                        isPremium={this.props.isPremium}
+                        updateRates={this.props.updateRates}/>
                 </Col>);
             }
             rows.push(<Row key={key}>{columns}</Row>);

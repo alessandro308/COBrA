@@ -12,14 +12,20 @@ export class ContentCard extends React.Component{
 
         /* Javascript binding function */
         this.getAcessRight = this.getAcessRight.bind(this);
-        this.consumeIt = this.consumeIt.bind(this);
+        this._consumeIt = this._consumeIt.bind(this);
         this.checkAccessRight = this.checkAccessRight.bind(this);
         this.sendRating = this.sendRating.bind(this);
         this.withdrawMoney = this.withdrawMoney.bind(this);
 
         this.catalog = (this.web3.eth.contract(this.props.catalog.abi)).at(this.props.catalog.address);
         this.content = this.web3.eth.contract(Content.abi).at(this.props.address);
-
+        const newFeedbackEvent = this.content.newFeedback({_user: this.web3.eth.defaultAccount});
+        newFeedbackEvent.watch(
+            async (err, res)=>{
+                alert("Your feedback is saved!");
+                this.props.updateRates(this.props.name);
+            }
+        )
     }
 
     checkAccessRight(){
@@ -33,21 +39,26 @@ export class ContentCard extends React.Component{
             })
     }
 
-    consumeIt(){
-        /* Perform a call */
-        this.content.getContent.call( (err, res) => {
-            alert(res + "\nPlease, complete the transaction and wait to be confirmed");
-            this.setState({
-                userHasRightAccess: false
-            });
-        });
+    _consumeIt(){
         /* Performa a trnsaction */
-        this.content.getContent((err, res) => {
+        this.content.consumeContent((err, res) => {
             if(!err)
-                console.log("Content consumed! : "+res);
+                alert(`Content consumed!`);
             else
                 console.error(err);
         });
+    }
+    consumeIt = () => {
+        if(this.props.isPremium){
+            this.content.consumeContentPremium((err, res) => {
+                if(!err)
+                    alert(`Content consumed!`)
+                else
+                    console.error(err);
+            });
+        }else{
+            this._consumeIt();
+        }
     }
 
     getAcessRight(){
@@ -96,9 +107,11 @@ export class ContentCard extends React.Component{
                         <h6>Views: {this.props.views}</h6>
                     </Panel.Heading>
                     <Panel.Body>
-                        {!this.props.accessRight ?
-                            <Button bsSize="xsmall" bsStyle="info" onClick={this.getAcessRight}>"Buy one view!"</Button> :
+                        {!this.props.accessRight && !this.props.isPremium ?
+                            <Button bsSize="xsmall" bsStyle="info" onClick={this.getAcessRight}>Buy one view!</Button> :
                             <Button bsSize="xsmall" bsStyle="info" onClick={this.consumeIt}>Consume it!</Button> }
+                        
+                        <Button bsSize="xsmall" bsStyle="danger" style={{marginLeft: "5px"}} onClick={e => this.props.triggerModal(this.props.name, this.props.cost)}>Gift a content!</Button>
                     </Panel.Body>
                     <Panel.Footer><h6>Rating (mean values):</h6>
                         <Rating rating={this.props.rating} canRate={this.props.canRate} sendRating={this.sendRating}/>

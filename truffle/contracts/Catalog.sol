@@ -7,14 +7,14 @@ contract Catalog{
         bytes32 name;
         uint64 views;
     }
-    uint public contentCost = 0.002 ether;
     uint public premiumCost = 0.2 ether;
-    uint public premiumTime = 10000 /*Block height*/;
+    uint public premiumTime = 50 /*Block height*/;
     address private owner;
  
     uint64 totalViews = 0;
 
     bytes32[] internal contentsName;
+    mapping(bytes32 => uint) public name2cost;
     mapping(bytes32 => address) public name2address;
     mapping (address => uint) internal premiumEndBlockNumber;
     //mapping (string => Content) internal author2mostPopular;
@@ -127,24 +127,16 @@ contract Catalog{
         return name;
     }   
 
-    function consumeContent(bytes32 _contentName/*, uint64 _newViewsCounter*/) external {
+    function consumeContent(bytes32 _contentName, uint viewsFromPayment) external {
         require(msg.sender == name2address[_contentName], "This function is callable only from the content");
-        /*BaseContentManagement c = BaseContentManagement(name2address[_contentName]);
-        BaseContentManagement.Genre g = c.genre();
-        if(genre2mostPopularCounter[uint(g)] < _newViewsCounter){
-            genre2mostPopular[uint(g)] = _contentName;
-            genre2mostPopularCounter[uint(g)] = _newViewsCounter;
-        }*/
-        /*string memory a = c.author();
-        if(_newViewsCounter > author2mostPopular[a].views){
-            author2mostPopular[a] = Content(_contentName, _newViewsCounter);
-        }*/
         totalViews++;
-        if(totalViews%1000 == 0){
-            for(uint i = 0; i<contentsName.length; i++){
-                BaseContentManagement content = BaseContentManagement(name2address[contentsName[i]]);
-                content.resetViewsAndGetMoney.value(contentCost * uint(content.viewsFromLastPayment()))();
-            }
+        if(viewsFromPayment == 0){
+            BaseContentManagement content = BaseContentManagement(name2address[_contentName]);
+            uint8 _fair; 
+            uint8 _cool; 
+            uint8 _appr;
+            (_fair, _cool, _appr) = content.ratingMean();
+            content.resetViewsAndGetMoney.value(content.contentCost() * uint(content.viewsFromLastPayment()) * (_fair+_cool+_appr)/(3*254))();
         }
         emit ContentConsumed(_contentName, tx.origin);
         emit PaymentTriggered();
@@ -156,20 +148,21 @@ contract Catalog{
         assert(c.views() == 0);
         assert(c.viewsFromLastPayment() == 0);
         contentsName.push(c.name());
-        name2address[c.name()] = _addr;   
+        name2address[c.name()] = _addr;
+        name2cost[c.name()] = c.contentCost();
         emit PublishedContent(_addr, c.name());
     }
 
     /* Set, for the sender, the right to access to the content */
     function grantAccess(bytes32 _content) external payable {
-        require(msg.value == contentCost, "You have to pay some ether for this content");
+        require(msg.value == name2cost[_content], "You have to pay some ether for this content");
         BaseContentManagement b = BaseContentManagement(name2address[_content]);
         b.grantAccess(msg.sender);
         emit ContentBought(_content, msg.sender);
     }
 
     function giftContent(bytes32 _contentName, address _userAddr) external payable {
-        require(msg.value == contentCost);
+        require(msg.value == name2cost[_contentName]);
         BaseContentManagement b = BaseContentManagement(name2address[_contentName]);
         b.grantAccess(_userAddr);
         emit GiftContentBought(msg.sender, _userAddr, _contentName);
@@ -203,11 +196,15 @@ contract Catalog{
         /* pay the content not already paid */
         for(uint i = 0; i<contentsName.length; i++){
             BaseContentManagement content = BaseContentManagement(name2address[contentsName[i]]);
-            content.resetViewsAndGetMoney.value(contentCost * uint(content.viewsFromLastPayment()))();
+            uint8 _fair; 
+            uint8 _cool; 
+            uint8 _appr;
+            (_fair, _cool, _appr) = content.ratingMean();
+            content.resetViewsAndGetMoney.value(content.contentCost() * uint(content.viewsFromLastPayment()) * (_fair+_cool+_appr)/(3*254))();
         }
         /* Divide the subscription premium cost amoung all the contents w.r.t. their total views */
         for(i = 0; i<contentsName.length; i++){
-            BaseContentManagement content = BaseContentManagement(name2address[contentsName[i]]);
+            content = BaseContentManagement(name2address[contentsName[i]]);
             address(name2address[contentsName[i]]).transfer(address(this).balance/totalViews * uint(content.views()));
         }
         selfdestruct(owner); /* The remaining money, are sent to owner */
@@ -230,7 +227,7 @@ contract Catalog{
         return string(bytesStringTrimmed);
     }
 
-/*    function GetMostRated(uint _category) external view returns (bytes32){
+    function GetMostRated(uint _category) external view returns (bytes32){
         BaseContentManagement cont0 = BaseContentManagement(name2address[contentsName[0]]);
         bytes32 top = contentsName[0];
         BaseContentManagement.Rating memory toprate;
@@ -309,7 +306,7 @@ contract Catalog{
         
         for(uint i = 1; i<contentsName.length; i++){
             BaseContentManagement cont = BaseContentManagement(name2address[contentsName[i]]);
-            if( keccak256(cont.author()) == keccak256(_author)){
+            if( keccak256(abi.encodePacked(cont.author())) == keccak256(abi.encodePacked(_author))){
                 (_fair, _cool, _appr) = cont.ratingMean();
                 if(_category == 0){
                     if(_fair > toprate.fairness){
@@ -330,5 +327,4 @@ contract Catalog{
             }
         }
     }
-*/
 }

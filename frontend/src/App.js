@@ -5,6 +5,7 @@ import './App.css';
 import {CatalogContext, Content} from "./Global";
 import ContentsGrid from './components/ContentsGrid';
 import AddNewContent from './components/AddNewContent';
+import GiftModal from './components/GiftContentModal';
 
 const Menu = (props => <Navbar>
   <Navbar.Header>
@@ -22,6 +23,19 @@ const Menu = (props => <Navbar>
     <NavItem eventKey={2} onClick={e => props.onClick(2)} selected={props.selected===2}>
       {props.selected===2 ? <b>Your content</b> : "Your content"}
     </NavItem>
+    <NavItem eventKey={3} onClick={e => props.onClick(3)} selected={props.selected===3}>
+      {props.selected===3 ? <b>Rate a content</b> : "Rate a content"}
+    </NavItem>
+    <NavItem>
+      |
+    </NavItem>
+    {props.isPremium ? 
+    <NavItem onClick={e => props.buyPremium()}>
+      <b><font color="red">Your are a premium user!</font></b>
+    </NavItem> :
+    <NavItem onClick={e => props.buyPremium()}>
+      <b><font color="red">Buy premium ({props.premiumCost} ETH)</font></b>
+    </NavItem>}
   </Nav>
   <Nav pullRight>
         <NavItem>
@@ -38,7 +52,9 @@ class App extends Component {
     this.catalog = (this.web3.eth.contract(props.catalog.abi)).at(props.catalog.address);
     this.state = {
       contents: [],
-      menu: 0
+      menu: 0,
+      premiumCost: 0,
+      isPremium: false
     };
     this.updateCatalogData = () => {
       this.catalog.getContentList( 
@@ -49,16 +65,22 @@ class App extends Component {
             }
             Promise.all(promises).then(
               values => {
+                console.log(values.length);
                 this.getValues(values, 0);
               }
             )
         });
     };
     this.updateCatalogData();
+    this.getPremiumCost().then(
+      res => {
+        this.setState({premiumCost: res});
+      }
+    )
 
     /* Set the event listerner for grantingAccess and contentConsuming */
-    var event = this.catalog.ContentBought({_user: this.web3.eth.defaultAccount});
-    event.watch(
+    const ContentBought = this.catalog.ContentBought({_user: this.web3.eth.defaultAccount});
+    ContentBought.watch(
         async (err, res)=>{
             if(res.args._user === this.web3.eth.defaultAccount){ /* Should be always true */
               let contents = [...this.state.contents];
@@ -66,35 +88,70 @@ class App extends Component {
                 if(contents[i].name === this.web3.toAscii(res.args._content)){
                   contents[i].accessRight = await this.checkAccess(contents[i].address);
                   this.setState({contents});
+                  return;
                 }
               }
             }
         }
     );
 
-    var event1 = this.catalog.ContentConsumed({_user: this.web3.eth.defaultAccount}); /* BUG: this is not fired*/
-    event1.watch(
+    const ContentConsumed = this.catalog.ContentConsumed({_user: this.web3.eth.defaultAccount}); /* BUG: this is not fired*/
+    ContentConsumed.watch(
         async (err, res) => {
-            console.log(err);
-            console.log(res);
-            console.log(res.args._user);
-            console.log(this.web3.eth.defaultAccount);
             if(res.args._user === this.web3.eth.defaultAccount){ /* Should be always true but not*/
                 /* Check if the user lost the access right or if he bought the content another time */
-                console.log("IF CONDITION PASSE")
                 let contents = [...this.state.contents];
                 for(let i = 0; i<contents.length; i++){
-                  console.log(contents[i].name);
-                  console.log(this.web3.toAscii(res.args._content));
                   if(contents[i].name === this.web3.toAscii(res.args._content)){
                     contents[i].accessRight = await this.checkAccess(contents[i].address);
-                    console.log(contents[i].accessRight);
+                    contents[i].canRate = await this.canRate(contents[i].address);
                     this.setState({contents});
+                    return;
                   }
                 }
             }
         }
     )
+
+    const GiftContentBought = this.catalog.GiftContentBought({_to: this.web3.eth.defaultAccount});
+    GiftContentBought.watch(
+      async (err, res) => {
+        if(res.args._user === this.web3.eth.defaultAccount){
+          let contents = [...this.state.contents];
+          for(let i = 0; i<contents.length; i++){
+            if(contents[i].name === this.web3.toAscii(res.args._content)){
+              contents[i].accessRight = await this.checkAccess(contents[i].address);
+              alert(`Ei! Someone (${res.args._from}) gave you ${this.web3.toAscii(res.args._content)}!`);
+              this.setState({contents});
+              return;
+            }
+          }
+        }
+      }
+    )
+
+    const PremiumSubscriptionBought = this.catalog.PremiumSubscriptionBought({_user: this.web3.eth.defaultAccount});
+    PremiumSubscriptionBought.watch(
+      async (err, res) => {
+        if(res.args._user === this.web3.eth.defaultAccount){
+          this.setState({
+            isPremium: true
+          })
+          this.checkingPremium = setInterval(() => {
+            this.checkPremium().then(
+              res =>{
+                if(res === false){
+                  this.setState({
+                    isPremium: false
+                  });
+                  clearInterval(this.checkingPremium);
+                }
+              }
+            )
+          })
+        }
+      }
+    );
 
     /* Javascript boilerplate function */
     this.menuClickHandler = key => this.setState({menu: key});
@@ -107,7 +164,7 @@ class App extends Component {
     this.getContentCost = this.getContentCost.bind(this);
     this.getOwner = this.getOwner.bind(this);
     this.getMyRate = this.getMyRate.bind(this);
-    this.customer = this.customer.bind(this);
+    this.hasConsumed = this.hasConsumed.bind(this);
     this.canRate = this.canRate.bind(this);
     this.publishContent = this.publishContent.bind(this);
     this.getBalance = this.getBalance.bind(this);
@@ -131,6 +188,13 @@ class App extends Component {
       content.views((err, res) => {if(!err){succ(res)}else{rej(err);}})
     })
   }
+
+  getPremiumCost = () => {
+    return new Promise((succ, rej) => {
+      this.catalog.premiumCost( (err, res) => {if(!err) succ(res); else rej(err)}) ;
+    })
+  }
+
   checkAccess(contentAddress){
     return new Promise((succ, rej) => {
       this.catalog.isGranted(this.web3.eth.defaultAccount, contentAddress, (err, res) => {if(!err){return succ(res)}else{rej(err);}})
@@ -160,10 +224,10 @@ class App extends Component {
       content.ratingMean((err, res) => {if(!err){succ(res)}else{rej(err);}})
     })
   }
-  customer(contentAddress){
+  hasConsumed(contentAddress){
     return new Promise((succ, rej) => {
       let content = this.web3.eth.contract(Content.abi).at(contentAddress);
-      content.customers(this.web3.eth.defaultAccount, (err, res) => {
+      content.hasConsumed(this.web3.eth.defaultAccount, (err, res) => {
         if(!err){ 
           succ(res);
         }else{
@@ -183,11 +247,11 @@ class App extends Component {
   */
   canRate(contentAddress){
     return new Promise(async(succ, rej) => {
-      let customerInserted = await this.customer(contentAddress);
+      let customerInserted = await this.hasConsumed(contentAddress);
       if(customerInserted){
         let rate = await this.getMyRate(contentAddress);
         let result = rate.reduce((prev, curr) => {
-          return prev && curr.toNumber() == 0;
+          return prev && curr.toNumber() === 0;
         }, true);
         succ(result);
       }else{
@@ -220,6 +284,30 @@ class App extends Component {
       });
     });
   }
+
+  buyPremium = () => {
+    return new Promise((succ, rej) => {
+      this.catalog.buyPremium({value: this.state.premiumCost}, (err, res) => {if(!err) succ(res); else rej(err)});
+    })
+  }
+
+  checkPremium = () => {
+    return new Promise((succ, rej) => {
+      this.catalog.isPremium(this.web3.eth.defaultAccount, (err, res) => {if (!err) succ(res); else rej(err)})
+    })
+  }
+
+  updateRates = (contentName) => {
+    let contents = this.state.contents;
+    for(let i = 0; i<this.state.contents.length; i++){
+      console.log(i, contents[i].name, contentName);
+      if(contents[i].name === contentName){
+        contents[i].canRate = false;
+        this.setState({contents});
+        return;
+      }
+    }
+  } 
 
 
   /* Get all the metadata for every content */
@@ -257,12 +345,24 @@ class App extends Component {
                   )
   }
 
+  triggerModal = (contentName, contentCost) => {
+    this.setState({
+      giftContentModalShow: true,
+      giftContent: contentName,
+      giftContentCost: contentCost
+    })
+  }
+
+  handleCloseModal = () => {
+    this.setState({ giftContentModalShow: false });
+  }
   
   render() {
     let content;
     switch(this.state.menu){
       case 0:   // All content
-        content = <ContentsGrid contents={this.state.contents} updateHandler={this.updateCatalogData} />;
+        content = <ContentsGrid contents={this.state.contents} updateHandler={this.updateCatalogData} 
+                    triggerModal={this.triggerModal} isPremium={this.state.isPremium}/>;
         break;
       case 1: // Only content with access right
         let contentList = this.state.contents.filter(
@@ -273,20 +373,35 @@ class App extends Component {
             <h1>Buy some access rights to view your accessible content!</h1>
             </Jumbotron>);
         }else{
-          content = <ContentsGrid updateHandler={this.updateCatalogData} contents={contentList}/>;
+          content = <ContentsGrid updateHandler={this.updateCatalogData} contents={contentList}
+                      triggerModal={this.triggerModal} isPremium={this.state.isPremium}/>;
         }
         break;
       case 2: // Only content deployed by the user
-        content = <ContentsGrid updateHandler={this.updateCatalogData} contents={this.state.contents.filter(content => {
+        content = <ContentsGrid updateHandler={this.updateCatalogData} isPremium={this.state.isPremium} contents={this.state.contents.filter(content => {
           return content.owner === this.web3.eth.defaultAccount;
-        })}/>;
+        })} triggerModal={this.triggerModal}/>;
         break;
+      case 3: //rateble content
+      content = <ContentsGrid updateHandler={this.updateCatalogData} isPremium={this.state.isPremium} contents={this.state.contents.filter(content => {
+        return content.canRate;
+      })} triggerModal={this.triggerModal}/>;
+      break;
       default:
-        content = <ContentsGrid contents={this.state.contents}/>;
+        content = <ContentsGrid contents={this.state.contents} />;
     }
+    let cost = this.web3.fromWei(this.state.premiumCost, "ether").toNumber ?  // this if will be false only before first setState
+                  this.web3.fromWei(this.state.premiumCost, "ether").toNumber() : 0;
+    
     return (
         <div className="App">
-            <Menu onClick={this.menuClickHandler} selected={this.state.menu}/>
+            <GiftModal show={this.state.giftContentModalShow} onHide={this.handleCloseModal} 
+                contentName={this.state.giftContent} contentCost={this.state.giftContentCost}/>
+            <Menu onClick={this.menuClickHandler} 
+              selected={this.state.menu} 
+              premiumCost={cost}
+              buyPremium={this.buyPremium} 
+              isPremium={this.state.isPremium}/>
             <div className="container">
               { this.state.menu === 2 ? <AddNewContent publishContent={this.publishContent}/> : null }
               {content}

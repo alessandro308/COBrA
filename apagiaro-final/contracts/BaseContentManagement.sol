@@ -1,9 +1,6 @@
 pragma solidity ^0.4.23;
 
-contract Catalog{
-    function isPremium(address _user) view external returns (bool);
-    function consumeContent(bytes32 _contentName, uint64 _newViewsCounter) external;
-}
+import "./Catalog.sol";
 
 contract BaseContentManagement{
     enum Genre {SONG, BOOK, VIDEO, MOVIE, OTHER}
@@ -58,7 +55,7 @@ contract BaseContentManagement{
         hasAccess[msg.sender] = false;
         views++;
         viewsFromLastPayment++;
-        cat.consumeContent(name, views);/* Trigger support function that updates catalog informations */
+        cat.consumeContent(name/*, views*/);/* Trigger support function that updates catalog informations */
     }
 
     function setCatalogAddress(address _catalog) external returns (bool){

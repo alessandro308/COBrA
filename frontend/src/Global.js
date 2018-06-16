@@ -1,340 +1,7 @@
 import React from 'react';
 
-export const Content = {
-    abi: [
-        {
-            "constant": true,
-            "inputs": [],
-            "name": "viewsFromLastPayment",
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "uint64"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "constant": true,
-            "inputs": [],
-            "name": "name",
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "bytes32"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "constant": true,
-            "inputs": [],
-            "name": "genre",
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "uint8"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "constant": false,
-            "inputs": [
-                {
-                    "name": "_name",
-                    "type": "bytes32"
-                },
-                {
-                    "name": "_auth",
-                    "type": "string"
-                },
-                {
-                    "name": "_content",
-                    "type": "string"
-                },
-                {
-                    "name": "_gen",
-                    "type": "uint256"
-                },
-                {
-                    "name": "_cost",
-                    "type": "uint256"
-                }
-            ],
-            "name": "setVar",
-            "outputs": [],
-            "payable": false,
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "constant": true,
-            "inputs": [],
-            "name": "contentCost",
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "uint256"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "constant": true,
-            "inputs": [
-                {
-                    "name": "",
-                    "type": "address"
-                }
-            ],
-            "name": "customers",
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "bool"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "constant": false,
-            "inputs": [],
-            "name": "getContentPremium",
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "string"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "constant": false,
-            "inputs": [],
-            "name": "withdraw",
-            "outputs": [],
-            "payable": false,
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "constant": true,
-            "inputs": [],
-            "name": "seeBalance",
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "uint256"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "constant": true,
-            "inputs": [
-                {
-                    "name": "",
-                    "type": "address"
-                }
-            ],
-            "name": "cust2rate",
-            "outputs": [
-                {
-                    "name": "fairness",
-                    "type": "uint8"
-                },
-                {
-                    "name": "coolness",
-                    "type": "uint8"
-                },
-                {
-                    "name": "appreciation",
-                    "type": "uint8"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "constant": false,
-            "inputs": [
-                {
-                    "name": "fairness",
-                    "type": "uint8"
-                },
-                {
-                    "name": "coolness",
-                    "type": "uint8"
-                },
-                {
-                    "name": "appreciation",
-                    "type": "uint8"
-                }
-            ],
-            "name": "leaveFeedback",
-            "outputs": [],
-            "payable": false,
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "constant": false,
-            "inputs": [],
-            "name": "getContent",
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "string"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "constant": false,
-            "inputs": [],
-            "name": "resetViewsAndGetMoney",
-            "outputs": [],
-            "payable": true,
-            "stateMutability": "payable",
-            "type": "function"
-        },
-        {
-            "constant": false,
-            "inputs": [
-                {
-                    "name": "_catalog",
-                    "type": "address"
-                }
-            ],
-            "name": "setCatalogAddress",
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "bool"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "constant": true,
-            "inputs": [],
-            "name": "owner",
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "address"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "constant": true,
-            "inputs": [],
-            "name": "author",
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "string"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "constant": true,
-            "inputs": [
-                {
-                    "name": "source",
-                    "type": "string"
-                }
-            ],
-            "name": "stringToBytes32",
-            "outputs": [
-                {
-                    "name": "result",
-                    "type": "bytes32"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "pure",
-            "type": "function"
-        },
-        {
-            "constant": true,
-            "inputs": [],
-            "name": "views",
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "uint64"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "constant": true,
-            "inputs": [],
-            "name": "ratingMean",
-            "outputs": [
-                {
-                    "name": "fairness",
-                    "type": "uint8"
-                },
-                {
-                    "name": "coolness",
-                    "type": "uint8"
-                },
-                {
-                    "name": "appreciation",
-                    "type": "uint8"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "inputs": [],
-            "payable": false,
-            "stateMutability": "nonpayable",
-            "type": "constructor"
-        },
-        {
-            "payable": true,
-            "stateMutability": "payable",
-            "type": "fallback"
-        }
-    ]
-}
-
 const Catalog = {
-    ROPSTEaddress: "0xb0269c5a01a56afee0384a44aa82af45919e9381",
-    address: "0x8cdaf0cd259887258bc13a92c0a6da92698644c0",
+    address: "0x2e756e704de3b709045af59ee863aa39d5559ca7",
     abi: [
         {
             "constant": true,
@@ -348,24 +15,6 @@ const Catalog = {
             ],
             "payable": false,
             "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "constant": false,
-            "inputs": [
-                {
-                    "name": "_contentName",
-                    "type": "bytes32"
-                },
-                {
-                    "name": "_newViewsCounter",
-                    "type": "uint64"
-                }
-            ],
-            "name": "consumeContent",
-            "outputs": [],
-            "payable": false,
-            "stateMutability": "nonpayable",
             "type": "function"
         },
         {
@@ -404,25 +53,6 @@ const Catalog = {
                 {
                     "name": "",
                     "type": "bytes32[]"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "constant": true,
-            "inputs": [
-                {
-                    "name": "",
-                    "type": "bytes32"
-                }
-            ],
-            "name": "contentCost",
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "uint256"
                 }
             ],
             "payable": false,
@@ -606,6 +236,25 @@ const Catalog = {
             "constant": true,
             "inputs": [
                 {
+                    "name": "",
+                    "type": "bytes32"
+                }
+            ],
+            "name": "name2cost",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [
+                {
                     "name": "_author",
                     "type": "string"
                 },
@@ -674,6 +323,24 @@ const Catalog = {
             "outputs": [],
             "payable": true,
             "stateMutability": "payable",
+            "type": "function"
+        },
+        {
+            "constant": false,
+            "inputs": [
+                {
+                    "name": "_contentName",
+                    "type": "bytes32"
+                },
+                {
+                    "name": "viewsFromPayment",
+                    "type": "uint256"
+                }
+            ],
+            "name": "consumeContent",
+            "outputs": [],
+            "payable": false,
+            "stateMutability": "nonpayable",
             "type": "function"
         },
         {
@@ -764,9 +431,31 @@ const Catalog = {
                     "indexed": false,
                     "name": "_content",
                     "type": "bytes32"
+                },
+                {
+                    "indexed": false,
+                    "name": "_user",
+                    "type": "address"
                 }
             ],
             "name": "ContentConsumed",
+            "type": "event"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": false,
+                    "name": "_content",
+                    "type": "bytes32"
+                },
+                {
+                    "indexed": false,
+                    "name": "_user",
+                    "type": "address"
+                }
+            ],
+            "name": "ContentBought",
             "type": "event"
         },
         {
@@ -814,18 +503,386 @@ const Catalog = {
                 {
                     "indexed": false,
                     "name": "_content",
-                    "type": "bytes32"
+                    "type": "address"
                 },
+                {
+                    "indexed": false,
+                    "name": "_contentName",
+                    "type": "bytes32"
+                }
+            ],
+            "name": "PublishedContent",
+            "type": "event"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
                 {
                     "indexed": false,
                     "name": "_user",
                     "type": "address"
                 }
             ],
-            "name": "ContentBought",
+            "name": "PremiumSubscriptionBought",
+            "type": "event"
+        },
+        {
+            "anonymous": false,
+            "inputs": [],
+            "name": "PaymentTriggered",
             "type": "event"
         }
     ]
+}
+
+export const Content = {
+   abi: [
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "viewsFromLastPayment",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint64"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "name",
+		"outputs": [
+			{
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_user",
+				"type": "address"
+			}
+		],
+		"name": "grantAccess",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [],
+		"name": "consumeContent",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "genre",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint8"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "contentCost",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "hasConsumed",
+		"outputs": [
+			{
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [],
+		"name": "withdraw",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "seeBalance",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "cust2rate",
+		"outputs": [
+			{
+				"name": "fairness",
+				"type": "uint8"
+			},
+			{
+				"name": "coolness",
+				"type": "uint8"
+			},
+			{
+				"name": "appreciation",
+				"type": "uint8"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "fairness",
+				"type": "uint8"
+			},
+			{
+				"name": "coolness",
+				"type": "uint8"
+			},
+			{
+				"name": "appreciation",
+				"type": "uint8"
+			}
+		],
+		"name": "leaveFeedback",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [],
+		"name": "resetViewsAndGetMoney",
+		"outputs": [],
+		"payable": true,
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_catalog",
+				"type": "address"
+			}
+		],
+		"name": "setCatalogAddress",
+		"outputs": [
+			{
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "owner",
+		"outputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "hasAccess",
+		"outputs": [
+			{
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "author",
+		"outputs": [
+			{
+				"name": "",
+				"type": "string"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "views",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint64"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "ratingMean",
+		"outputs": [
+			{
+				"name": "fairness",
+				"type": "uint8"
+			},
+			{
+				"name": "coolness",
+				"type": "uint8"
+			},
+			{
+				"name": "appreciation",
+				"type": "uint8"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [],
+		"name": "consumeContentPremium",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"name": "_name",
+				"type": "bytes32"
+			},
+			{
+				"name": "_author",
+				"type": "string"
+			},
+			{
+				"name": "_gen",
+				"type": "uint256"
+			},
+			{
+				"name": "_cost",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"payable": true,
+		"stateMutability": "payable",
+		"type": "fallback"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"name": "_from",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"name": "_fairness",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "_coolness",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "_appreciation",
+				"type": "uint256"
+			}
+		],
+		"name": "newFeedback",
+		"type": "event"
+	}
+]
 }
 
 export function hex2String(stringBytes) {

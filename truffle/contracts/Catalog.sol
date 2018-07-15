@@ -7,8 +7,8 @@ contract Catalog{
         bytes32 name;
         uint64 views;
     }
-    uint public premiumCost = 0.2 ether;
-    uint public premiumTime = 50 /*Block height*/;
+    uint public premiumCost = 0.1 ether;
+    uint public premiumTime = 10000 /*Block height*/;
     address private owner;
  
     uint64 totalViews = 0;
@@ -130,7 +130,7 @@ contract Catalog{
     function consumeContent(bytes32 _contentName, uint viewsFromPayment) external {
         require(msg.sender == name2address[_contentName], "This function is callable only from the content");
         totalViews++;
-        if(viewsFromPayment == 0){
+        if(viewsFromPayment == 100){
             BaseContentManagement content = BaseContentManagement(name2address[_contentName]);
             uint8 _fair; 
             uint8 _cool; 
@@ -294,7 +294,7 @@ contract Catalog{
         }
     }
 
-    function GetMostRatedByGenre(string _author, uint _category) view external returns (bytes32){
+    function GetMostRatedByAuthor(string _author, uint _category) view external returns (bytes32){
         BaseContentManagement cont0 = BaseContentManagement(name2address[contentsName[0]]);
         bytes32 top = contentsName[0];
         BaseContentManagement.Rating memory toprate;

@@ -5,10 +5,11 @@ import ContentCard from './ContentCard';
 class ContentsGrid extends React.Component{
     render(){
         let rows = [];
-        for(let i = 0; i<this.props.contents.length; i=i+3){
+        let colNumber = 3;
+        for(let i = 0; i<this.props.contents.length; i=i+colNumber){
             let columns = [];
             let key = "";
-            for(let j=0; j<3 && j+i<this.props.contents.length; j++){
+            for(let j=0; j<colNumber && j+i<this.props.contents.length; j++){
                 let content = this.props.contents[i+j];
                 key += content.name;
                 columns.push(<Col key={this.props.contents[i+j].name} xs={6} md={4}>

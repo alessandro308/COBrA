@@ -23,7 +23,6 @@ export class ContentCard extends React.Component{
         newFeedbackEvent.watch(
             async (err, res)=>{
                 if(!err){
-                    console.log(res);
                     console.log("Your feedback is saved!");
                     this.props.updateRates(this.props.name);
                 }

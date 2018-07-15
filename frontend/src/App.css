@@ -52,3 +52,11 @@
   left: 0.5em;
   margin-right: -50%;
 }
+
+.row:last-of-type{
+  margin-bottom: 50px;
+}
+
+.well {
+  background-image: linear-gradient(to bottom,#6cffba 0,#d7fcd9 100%);
+}

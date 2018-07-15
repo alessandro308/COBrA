@@ -6,15 +6,18 @@ import {CatalogContext, Content} from "./Global";
 import ContentsGrid from './components/ContentsGrid';
 import AddNewContent from './components/AddNewContent';
 import GiftModal from './components/GiftContentModal';
-
-const Menu = (props => <Navbar>
-  <Navbar.Header>
-    <Navbar.Brand>
-      <a href="#home">COBrA</a>
-    </Navbar.Brand>
-  </Navbar.Header>
-  <Nav>
-    <NavItem eventKey={0} onClick={e => props.onClick(0)} selected={props.selected===0}>
+import GiftPremiumModal from './components/GiftPremiumModal';
+import GetLatestButton from "./components/GetLatestButton";
+const Menu = (props => <Navbar inverse>
+    <Navbar.Header>
+      <Navbar.Brand>
+        <a href="#home">COBrA</a>
+      </Navbar.Brand>
+      <Navbar.Toggle />
+    </Navbar.Header>
+   <Navbar.Collapse>
+    <Nav>
+    <NavItem eventKey={0} active={props.selected===0} onClick={e => props.onClick(0)} selected={props.selected===0}>
       {props.selected===0 ? <b>All contents</b> : "All contents"}
     </NavItem>
     <NavItem eventKey={1} onClick={e => props.onClick(1)} selected={props.selected===1}>
@@ -26,23 +29,25 @@ const Menu = (props => <Navbar>
     <NavItem eventKey={3} onClick={e => props.onClick(3)} selected={props.selected===3}>
       {props.selected===3 ? <b>Rate a content</b> : "Rate a content"}
     </NavItem>
-    <NavItem>
-      |
-    </NavItem>
+  </Nav>
+  </Navbar.Collapse>
+  </Navbar>);
+const BottomBar = (props => 
+<Navbar fixedBottom inverse>
+    <Nav>
     {props.isPremium ? 
-    <NavItem onClick={e => props.buyPremium()}>
-      <b><font color="red">Your are a premium user!</font></b>
+    <NavItem>
+      <b><font color="#ff9a5b">Your are a premium user!</font></b>
     </NavItem> :
     <NavItem onClick={e => props.buyPremium()}>
-      <b><font color="red">Buy premium ({props.premiumCost} ETH)</font></b>
+      <b><font color="#ff9a5b">Buy premium ({props.premiumCost} ETH)</font></b>
     </NavItem>}
-  </Nav>
-  <Nav pullRight>
-        <NavItem>
-          Developed by Alessandro Pagiaro
-        </NavItem>
-  </Nav>
-  </Navbar>);
+    <NavItem onClick={e => props.showGiftPremium()}>
+      Gift Premium!
+    </NavItem>
+    </Nav>
+    <Navbar.Text pullRight>Developed by Alessandro Pagiaro</Navbar.Text>
+</Navbar>);
 
 class App extends Component {
   constructor(props){
@@ -54,7 +59,9 @@ class App extends Component {
       contents: [],
       menu: 0,
       premiumCost: 0,
-      isPremium: false
+      isPremium: false,
+      giftPremiumModalShow: false,
+      isLoadingContent: true
     };
     this.updateCatalogData = () => {
       this.catalog.getContentList( 
@@ -310,7 +317,10 @@ class App extends Component {
 
   /* Get all the metadata for every content */
   getValues(contentAddressArray, index){
-    if(index >= contentAddressArray.length){return;}
+    if(index >= contentAddressArray.length){
+      this.setState({isLoadingContent: false}); 
+      return;
+    }
     let contentAddress = contentAddressArray[index];
     Promise.all([this.getAuthor(contentAddress), //0
                   this.getRatingMean(contentAddress),//1
@@ -355,24 +365,40 @@ class App extends Component {
     this.setState({ giftContentModalShow: false });
   }
 
+  waitForAddress = (hash) => {
+    this.web3.eth.getTransactionReceipt(hash, (err, res)=>{
+      if(res == null || res.contractAddress == null){
+        setTimeout(() => {
+          this.waitForAddress(hash);
+        }, 1000);
+      }else{
+        console.log(res);
+        this.publishContent(res.contractAddress).then(
+          res =>
+            console.log(res)
+        );
+      }
+    });
+  }
+
   deployContent = (name, author, genre, cost) => {
     return new Promise((succ, rej) => {
-      this.web3.eth.contract(Content.abi).new(name, author, genre, cost, {gas: 400000}, (err, res) => {if(!err)succ(res); else rej(err);});
-    })
+      this.web3.eth.contract(Content.abi).new(
+        name, author, genre, cost, 
+        {data: Content.data, gas: '4700000'}, 
+        (err, res) => {if(!err)succ(res); else rej(err);});
+    });
   }
+
   deployAndPublish = async (name, author, genre, cost) => {
     let contRes = await this.deployContent(name, author, genre, cost);
-    console.log(contRes);
-    console.log(contRes.address);
-    this.publishContent(contRes.address).then(
-      res =>
-        console.log(res)
-    )
+    this.waitForAddress(contRes.transactionHash); //Then deploy it internally
   }
   
   render() {
     let contentProp = this.state.contents;
     let showJumbutron = false;
+    let text = "";
     switch(this.state.menu){
       case 1: // Only content with access right
         contentProp = this.state.contents.filter(
@@ -380,6 +406,7 @@ class App extends Component {
         );
         if(contentProp.length === 0){
           showJumbutron = true;
+          text = "Buy some access rights to view your accessible content!";
         }
         break;
       case 2: // Only content deployed by the user
@@ -391,33 +418,43 @@ class App extends Component {
         contentProp = this.state.contents.filter(content => {
           return content.canRate;
         });
+        if(contentProp.length === 0){
+          showJumbutron = true;
+          text="You have to consume some content before to rate it!"
+        }
         break;
       default:
         break;
     }
     let content = showJumbutron ? 
                     <Jumbotron>
-                      <h1>Buy some access rights to view your accessible content!</h1>
+                      <h1>{text}</h1>
                     </Jumbotron> :
                     <ContentsGrid contents={contentProp} updateHandler={this.updateCatalogData} 
                     triggerModal={this.triggerModal} isPremium={this.state.isPremium} updateRates={this.updateRates}/>;
 
     let cost = this.web3.fromWei(this.state.premiumCost, "ether").toNumber ?  // this if will be false only before first setState
                   this.web3.fromWei(this.state.premiumCost, "ether").toNumber() : 0;
-    
     return (
         <div className="App">
             <GiftModal show={this.state.giftContentModalShow} onHide={this.handleCloseModal} 
                 contentName={this.state.giftContent} contentCost={this.state.giftContentCost}/>
+            <GiftPremiumModal show={this.state.giftPremiumModalShow} onHide={e => this.setState({giftPremiumModalShow: false})}
+                premiumCost={cost} />
             <Menu onClick={this.menuClickHandler} 
               selected={this.state.menu} 
-              premiumCost={cost}
-              buyPremium={this.buyPremium} 
-              isPremium={this.state.isPremium}/>
+               />
             <div className="container">
+              {this.state.menu === 0 ? <GetLatestButton catalog={this.catalog} web3={this.web3}/> : null}
               { this.state.menu === 2 ? <AddNewContent publishContent={this.publishContent} deployAndPublish={this.deployAndPublish}/> : null }
               {content}
             </div>
+            <BottomBar 
+              showGiftPremium={e => this.setState({giftPremiumModalShow: true})} 
+              premiumCost={cost}
+              buyPremium={this.buyPremium} 
+              isPremium={this.state.isPremium}
+            />
         </div>
     );
   }

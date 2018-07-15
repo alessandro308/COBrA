@@ -3,6 +3,26 @@ var BaseContent = artifacts.require("./BaseContentManagement.sol");
 
 const fasttest = true;
 
+let a = function(i){
+    return new Promise((succ, rej) => {
+        let b = artifacts.require("./BaseContentManagement.sol");
+        b.new(web3.toHex(`Name${i}`), `Author${i}`, i%5, web3.toWei((i%10)/100, "ether"),
+                                {from: web3.eth.accounts[0]}, (err, res) => {if(!err) succ(res); else rej(err);});   
+    });
+}
+
+contract('Catalog', function(accounts) {
+    it("will be published 100 contents", function(){
+        return Catalog.deployed().then(async instance => {
+            for(let i = 0; i<(fasttest ? 5 : 100); i++){
+                let content = await a(i)   
+                instance.publishContent(content.address, (err, res) => {console.log(res)});
+            }
+        });
+    });
+});
+
+ 
 contract('Catalog', function(accounts) {
     it("should be empty catalog", function() {
       return Catalog.deployed().then(function(instance) {

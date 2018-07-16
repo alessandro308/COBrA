@@ -2,6 +2,7 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
+  "homepage" : "https://apagiaro.it/cobra-app",
   "dependencies": {
     "react": "^16.4.0",
     "react-bootstrap": "^0.32.1",

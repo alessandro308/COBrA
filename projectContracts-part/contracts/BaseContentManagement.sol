@@ -1,49 +1,48 @@
 pragma solidity ^0.4.23;
 
-contract Catalog{
-    function isPremium(address _user) view external returns (bool);
-    function isGranted(address _user, address _content) view external returns (bool);
-    function consumeContent(bytes32 _contentName, uint64 _newViewsCounter) external;
-}
+import "./Catalog.sol";
 
 contract BaseContentManagement{
-    enum Genre {SONG, BOOK, VIDEO}
+    enum Genre {SONG, BOOK, VIDEO, MOVIE, OTHER}
     struct Rating{
         uint8 fairness;
         uint8 coolness;
         uint8 appreciation;
     }
+
     address public owner;
     string public author;
     bytes32 public name;
-    string internal content;
+
     address private catalog = 0x0;
     uint64 public views = 0;
     uint64 public viewsFromLastPayment = 0;
-    mapping(address => bool) public customers;
+    mapping(address => bool) public hasConsumed;
+    mapping(address => bool) public hasAccess;
     uint public contentCost;
-    
+
+    Genre public genre;
     mapping(address => Rating) public cust2rate;
     Rating public ratingMean = Rating(0, 0, 0);
     uint64 totalRates = 0;
 
-    Genre public genre;
+    event newFeedback(address _from, uint _fairness, uint _coolness, uint _appreciation);
     
-    constructor() public {
+    constructor(bytes32 _name, string _author, uint _gen, uint _cost) public {
         owner = msg.sender;
-    }
-    
-    /* Function used to test the contract programmatically. To remove in production stage */
-    function setVar(bytes32 _name, string _auth, string _content, uint _gen, uint _cost) onlyOwner external{
         name = _name;
-        author = _auth;
-        content = _content;
+        author = _author;
         genre = Genre(_gen);
         contentCost = _cost;
     }
 
     modifier onlyOwner() {
         require(msg.sender == owner);
+        _;
+    }
+
+    modifier onlyCatalog(){
+        require(msg.sender == catalog);
         _;
     }
     
@@ -55,21 +54,20 @@ contract BaseContentManagement{
         return address(this).balance;
     }
 
-    function getContentPremium() external returns (string){
+    function consumeContentPremium() external{
         Catalog cat = Catalog(catalog);
         require(cat.isPremium(msg.sender));
-        customers[msg.sender] = true;
-        return content;
+        hasConsumed[msg.sender] = true;
     }
     
-    function getContent() external returns (string){
+    function consumeContent() external{
+        require(hasAccess[msg.sender]); // "You must have the access right to consume content");
         Catalog cat = Catalog(catalog);
-        require(cat.isGranted(msg.sender, address(this)), "You must have the access right to consume content");
-        customers[msg.sender] = true;
+        hasConsumed[msg.sender] = true;
+        hasAccess[msg.sender] = false;
         views++;
         viewsFromLastPayment++;
-        cat.consumeContent(name, views);/* Trigger support function that updates catalog informations */
-        return content;
+        cat.consumeContent(name, viewsFromLastPayment);/* Trigger support function that updates catalog informations */
     }
 
     function setCatalogAddress(address _catalog) external returns (bool){
@@ -80,13 +78,16 @@ contract BaseContentManagement{
         return false;
     }
 
-    function resetViewsAndGetMoney() external payable{
-        require(msg.sender == catalog);
+    function resetViewsAndGetMoney() external payable onlyCatalog(){
         viewsFromLastPayment = 0;
     }
 
+    function grantAccess(address _user) external onlyCatalog(){
+        hasAccess[_user] = true;
+    }
+
     function leaveFeedback(uint8 fairness, uint8 coolness, uint8 appreciation) external{
-        require(customers[msg.sender], "You have to consume the content before to rating it.");
+        require(hasConsumed[msg.sender], "You have to consume the content before to rating it.");
         cust2rate[msg.sender] = Rating(fairness, coolness, appreciation);
         ratingMean = Rating(
             uint8((ratingMean.fairness*totalRates+fairness)/(totalRates+1)), 
@@ -94,16 +95,11 @@ contract BaseContentManagement{
             uint8((ratingMean.appreciation*totalRates+appreciation)/(totalRates+1))
             );
         totalRates++;
+        emit newFeedback(msg.sender, fairness, coolness, appreciation);
     }
 
-    function stringToBytes32(string source) public pure returns (bytes32 result) {
-        bytes memory tempEmptyStringTest = bytes(source);
-        if (tempEmptyStringTest.length == 0) {
-            return 0x0;
-        }
-        assembly {
-            result := mload(add(source, 32))
-        }
+    function goodbye() external onlyOwner{
+        selfdestruct(owner);
     }
 
     function() external payable{}

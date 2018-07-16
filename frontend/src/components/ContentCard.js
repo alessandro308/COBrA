@@ -113,7 +113,7 @@ export class ContentCard extends React.Component{
                             <Button bsSize="xsmall" bsStyle="info" onClick={this.getAcessRight}>Buy one view!</Button> :
                             <Button bsSize="xsmall" bsStyle="info" onClick={this.consumeIt}>Consume it!</Button> }
                         
-                        <Button bsSize="xsmall" bsStyle="danger" style={{marginLeft: "5px"}} onClick={e => this.props.triggerModal(this.props.name, this.props.cost)}>Gift a content!</Button>
+                        <Button bsSize="xsmall" bsStyle="danger" style={{marginLeft: "5px"}} onClick={e => this.props.triggerModal(this.props.name, this.props.cost)}>Gift this content!</Button>
                     </Panel.Body>
                     <Panel.Footer><h6>Rating (mean values):</h6>
                         <Rating rating={this.props.rating} canRate={this.props.canRate} sendRating={this.sendRating}/>

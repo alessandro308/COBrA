@@ -77,7 +77,7 @@ export default class GetLatestButton extends React.Component{
             default:
                 break;
         }
-        if(this.state.selectedButton != 0){
+        if(this.state.selectedButton !== 0){
             let t = this.state.selectedButton;
                 let input;
                 if(t === 5 || t === 6){
@@ -125,7 +125,7 @@ export default class GetLatestButton extends React.Component{
                     <Collapse in={this.state.openResult}>
                         <div>
                             <Well>
-                                {this.props.web3.toAscii(this.state.result) != "" ? <h1>{this.props.web3.toAscii(this.state.result)}</h1> : <h1>No result found!</h1>}
+                                {this.props.web3.toAscii(this.state.result) !== "" ? <h1>{this.props.web3.toAscii(this.state.result)}</h1> : <h1>No result found!</h1>}
                                 <br/>
                                 <Button bsStyle="warning" onClick={e => this.setState({openResult: false})}>Close</Button>
                             </Well>

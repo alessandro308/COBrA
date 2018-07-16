@@ -10,13 +10,19 @@ module.exports = {
       port: 7545,
       network_id: "*", // Match any network id
     },
-    ropsten:  {
+    ropsten_remote:  {
       provider: function() {
         return new HDWalletProvider(mnemonic, url)
       },
-      gas: 4000000,   // <--- Twice as much
-      gasPrice: 10000000000,
+      gas: 4700000,   // <--- Twice as much
+      gasPrice: 20,
       network_id: 3
+    },
+    ropsten:  {
+      network_id: 3,
+      host: "localhost",
+      port:  8545,
+      gas:   5400000
     }
   },
   rpc: {
